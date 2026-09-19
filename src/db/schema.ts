@@ -1,4 +1,4 @@
-import { pgTable, text, integer, bigint, timestamp, boolean } from 'drizzle-orm/pg-core';
+import { pgTable, text, integer, bigint, timestamp, boolean, primaryKey } from 'drizzle-orm/pg-core';
 
 export const users = pgTable('users', {
   userId: text('user_id').primaryKey(),
@@ -39,8 +39,14 @@ export const guildConfig = pgTable('guild_config', {
   shopChannelId: text('shop_channel_id'),
 });
 
-export const guildMembers = pgTable('guild_members', {
-  guildId: text('guild_id').notNull(),
-  userId: text('user_id').notNull(),
-  inGuild: boolean('in_guild').notNull().default(true),
-});
+export const guildMembers = pgTable(
+  'guild_members',
+  {
+    guildId: text('guild_id').notNull(),
+    userId: text('user_id').notNull(),
+    inGuild: boolean('in_guild').notNull().default(true),
+  },
+  (table) => ({
+    pk: primaryKey({ columns: [table.guildId, table.userId] }),
+  }),
+);

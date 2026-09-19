@@ -1,0 +1,1 @@
+ALTER TABLE "guild_members" ADD CONSTRAINT "guild_members_guild_id_user_id_pk" PRIMARY KEY("guild_id","user_id");
