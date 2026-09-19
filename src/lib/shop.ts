@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { and, eq } from 'drizzle-orm';
 import type { Db } from '../db/client.js';
 import { shopItems } from '../db/schema.js';
@@ -21,4 +22,15 @@ export async function findShopItem(db: Db, guildId: string, itemId: string): Pro
     .from(shopItems)
     .where(and(eq(shopItems.guildId, guildId), eq(shopItems.id, itemId)));
   return item;
+}
+
+export async function insertShopItem(
+  db: Db,
+  item: { guildId: string; name: string; price: number; roleId: string; description: string | null },
+): Promise<void> {
+  await db.insert(shopItems).values({ id: randomUUID(), ...item });
+}
+
+export async function deleteShopItem(db: Db, guildId: string, itemId: string): Promise<void> {
+  await db.delete(shopItems).where(and(eq(shopItems.guildId, guildId), eq(shopItems.id, itemId)));
 }
