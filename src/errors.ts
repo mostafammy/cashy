@@ -29,9 +29,12 @@ export async function handleCommandError(interaction: ChatInputCommandInteractio
   // the 3s ack window was missed, or a second failure on an already-consumed
   // token. That must not escape as a second, uncaught error.
   try {
-    if (interaction.replied || interaction.deferred) {
-      // After deferReply() the ephemeral state is already fixed by the defer;
-      // followUp still honours the flag for the follow-up message itself.
+    if (interaction.deferred && !interaction.replied) {
+      // A deferred-but-unresolved interaction has a "thinking..." placeholder
+      // that must be resolved via editReply — followUp would instead leave
+      // that placeholder hanging forever and send a confusing second message.
+      await interaction.editReply({ content });
+    } else if (interaction.replied) {
       await interaction.followUp({ content, flags: MessageFlags.Ephemeral });
     } else {
       await interaction.reply({ content, flags: MessageFlags.Ephemeral });
