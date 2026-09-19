@@ -19,12 +19,14 @@ describe('/balance command', () => {
 
     const interaction = {
       user: { id: 'u1' },
-      reply: vi.fn(),
+      deferReply: vi.fn(),
+      editReply: vi.fn(),
     } as unknown as ChatInputCommandInteraction;
 
     await command.execute(interaction);
 
-    expect(interaction.reply).toHaveBeenCalledWith(
+    expect(interaction.deferReply).toHaveBeenCalled();
+    expect(interaction.editReply).toHaveBeenCalledWith(
       expect.objectContaining({ content: expect.stringContaining('250') }),
     );
   });

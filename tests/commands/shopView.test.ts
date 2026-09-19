@@ -14,14 +14,17 @@ describe('/shop view command', () => {
     const interaction = {
       guildId: 'g1',
       reply: vi.fn(),
+      deferReply: vi.fn(),
+      editReply: vi.fn(),
     } as unknown as ChatInputCommandInteraction;
 
     await command.execute(interaction);
 
     expect(listSpy).toHaveBeenCalledWith(db, 'g1');
-    const [[payload]] = (interaction.reply as ReturnType<typeof vi.fn>).mock.calls;
+    const [[payload]] = (interaction.editReply as ReturnType<typeof vi.fn>).mock.calls;
     expect(payload.content).toContain('VIP Role');
     expect(payload.content).toContain('500');
+    expect(payload.content).toContain('1');
   });
 
   it('replies with a fallback message when the shop is empty', async () => {
@@ -33,11 +36,13 @@ describe('/shop view command', () => {
     const interaction = {
       guildId: 'g1',
       reply: vi.fn(),
+      deferReply: vi.fn(),
+      editReply: vi.fn(),
     } as unknown as ChatInputCommandInteraction;
 
     await command.execute(interaction);
 
-    expect(interaction.reply).toHaveBeenCalledWith(
+    expect(interaction.editReply).toHaveBeenCalledWith(
       expect.objectContaining({ content: expect.stringContaining('no shop items') }),
     );
   });

@@ -1,8 +1,9 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import { createRedis } from '../../src/redis/client.js';
 import { getCooldownRemaining, setCooldown } from '../../src/lib/cooldowns.js';
+import { requireEnv } from '../helpers/env.js';
 
-const redis = createRedis(process.env.REDIS_URL ?? 'redis://localhost:6379');
+const redis = createRedis(requireEnv('REDIS_URL'));
 
 describe('cooldowns lib', () => {
   afterEach(async () => {

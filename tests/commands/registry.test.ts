@@ -1,4 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
+import { MessageFlags } from 'discord.js';
 import { createRegistry } from '../../src/commands/registry.js';
 import { InsufficientBalanceError, OnCooldownError } from '../../src/errors.js';
 import type { Command } from '../../src/commands/types.js';
@@ -38,7 +39,7 @@ describe('command registry', () => {
     await registry.handleInteraction(interaction);
 
     expect(interaction.reply).toHaveBeenCalledWith(
-      expect.objectContaining({ ephemeral: true, content: expect.stringContaining("don't have enough") }),
+      expect.objectContaining({ flags: MessageFlags.Ephemeral, content: expect.stringContaining("don't have enough") }),
     );
   });
 
@@ -55,7 +56,7 @@ describe('command registry', () => {
     await registry.handleInteraction(interaction);
 
     expect(interaction.reply).toHaveBeenCalledWith(
-      expect.objectContaining({ ephemeral: true, content: expect.stringContaining('45') }),
+      expect.objectContaining({ flags: MessageFlags.Ephemeral, content: expect.stringContaining('45') }),
     );
   });
 

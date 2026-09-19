@@ -19,13 +19,14 @@ describe('/work command', () => {
     const interaction = {
       user: { id: 'u1' },
       guildId: 'g1',
-      reply: vi.fn(),
+      deferReply: vi.fn(),
+      editReply: vi.fn(),
     } as unknown as ChatInputCommandInteraction;
 
     await command.execute(interaction);
 
     expect(setCooldown).toHaveBeenCalledWith(redis, 'work', 'u1', 3600);
-    const [, , amount] = credit.mock.calls[0];
+    const [, , , amount] = credit.mock.calls[0];
     expect(amount).toBeGreaterThanOrEqual(20);
     expect(amount).toBeLessThanOrEqual(80);
   });
@@ -40,7 +41,8 @@ describe('/work command', () => {
     const interaction = {
       user: { id: 'u1' },
       guildId: 'g1',
-      reply: vi.fn(),
+      deferReply: vi.fn(),
+      editReply: vi.fn(),
     } as unknown as ChatInputCommandInteraction;
 
     await expect(command.execute(interaction)).rejects.toThrow(OnCooldownError);

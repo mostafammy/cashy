@@ -1,13 +1,18 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterAll } from 'vitest';
 import { createDb } from '../../src/db/client.js';
+import { createRedis } from '../../src/redis/client.js';
 import { users, transactions } from '../../src/db/schema.js';
 import { transfer } from '../../src/lib/economy.js';
 import { inArray } from 'drizzle-orm';
 import { eq } from 'drizzle-orm';
+import { requireEnv } from '../helpers/env.js';
 
-const db = createDb(process.env.DATABASE_URL ?? 'postgres://cashy:cashy@localhost:5432/cashy');
+const db = createDb(requireEnv('DATABASE_URL'));
+const redis = createRedis(requireEnv('REDIS_URL'));
 
 describe('transfer concurrency', () => {
+  afterAll(() => redis.quit());
+
   beforeEach(async () => {
     await db.delete(transactions).where(inArray(transactions.userId, ['race-a', 'race-b']));
     await db.delete(users).where(inArray(users.userId, ['race-a', 'race-b']));
@@ -19,8 +24,8 @@ describe('transfer concurrency', () => {
 
   it('never lets balance go negative under concurrent transfers of the same funds', async () => {
     const results = await Promise.allSettled([
-      transfer(db, 'race-a', 'race-b', 80, null),
-      transfer(db, 'race-a', 'race-b', 80, null),
+      transfer(db, redis, 'race-a', 'race-b', 80, null),
+      transfer(db, redis, 'race-a', 'race-b', 80, null),
     ]);
 
     const [{ balance: senderBalance }] = await db.select().from(users).where(eq(users.userId, 'race-a'));

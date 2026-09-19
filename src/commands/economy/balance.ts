@@ -9,12 +9,16 @@ export function balanceCommand(db: Db, redis: Redis): Command {
   return {
     data: new SlashCommandBuilder().setName('balance').setDescription('Check your universal balance'),
     async execute(interaction) {
+      // Neon/Upstash round-trips routinely exceed Discord's ~3s ack deadline,
+      // so acknowledge first and edit the deferred reply once the data is in.
+      await interaction.deferReply();
+
       const [balance, config] = await Promise.all([
         getBalance(db, interaction.user.id),
         getBotConfig(db, redis),
       ]);
 
-      await interaction.reply({
+      await interaction.editReply({
         content: `You have ${balance} ${config.currencySymbol} ${config.currencyName}.`,
       });
     },

@@ -1,7 +1,8 @@
 import { describe, it, expect, afterAll } from 'vitest';
 import { createRedis } from '../../src/redis/client.js';
+import { requireEnv } from '../helpers/env.js';
 
-const redis = createRedis(process.env.REDIS_URL ?? 'redis://localhost:6379');
+const redis = createRedis(requireEnv('REDIS_URL'));
 
 describe('createRedis', () => {
   afterAll(() => redis.quit());

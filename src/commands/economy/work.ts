@@ -17,6 +17,8 @@ export function workCommand(db: Db, redis: Redis): Command {
   return {
     data: new SlashCommandBuilder().setName('work').setDescription('Work for a random reward'),
     async execute(interaction) {
+      await interaction.deferReply();
+
       const remaining = await getCooldownRemaining(redis, 'work', interaction.user.id);
       if (remaining > 0) {
         throw new OnCooldownError(remaining);
@@ -24,10 +26,10 @@ export function workCommand(db: Db, redis: Redis): Command {
 
       const config = await getBotConfig(db, redis);
       const amount = randomInRange(config.workMin, config.workMax);
-      await credit(db, interaction.user.id, amount, 'work', interaction.guildId ?? null);
+      await credit(db, redis, interaction.user.id, amount, 'work', interaction.guildId ?? null);
       await setCooldown(redis, 'work', interaction.user.id, HOUR_SECONDS);
 
-      await interaction.reply({
+      await interaction.editReply({
         content: `You worked and earned ${amount} ${config.currencySymbol} ${config.currencyName}!`,
       });
     },

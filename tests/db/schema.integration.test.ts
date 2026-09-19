@@ -2,8 +2,9 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { createDb } from '../../src/db/client.js';
 import { users } from '../../src/db/schema.js';
 import { eq } from 'drizzle-orm';
+import { requireEnv } from '../helpers/env.js';
 
-const db = createDb(process.env.DATABASE_URL ?? 'postgres://cashy:cashy@localhost:5432/cashy');
+const db = createDb(requireEnv('DATABASE_URL'));
 
 describe('users table', () => {
   afterAll(async () => {

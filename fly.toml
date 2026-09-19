@@ -3,6 +3,9 @@ primary_region = "iad"
 
 [build]
 
+[deploy]
+  release_command = "node dist/db/migrate.js"
+
 [env]
   NODE_ENV = "production"
 

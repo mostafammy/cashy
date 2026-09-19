@@ -1,4 +1,4 @@
-import type { ChatInputCommandInteraction } from 'discord.js';
+import { MessageFlags, type ChatInputCommandInteraction } from 'discord.js';
 
 export class InsufficientBalanceError extends Error {
   constructor(userId: string, requested: number, available: number) {
@@ -25,9 +25,18 @@ export async function handleCommandError(interaction: ChatInputCommandInteractio
     console.error('Unhandled command error:', error);
   }
 
-  if (interaction.replied || interaction.deferred) {
-    await interaction.followUp({ content, ephemeral: true });
-  } else {
-    await interaction.reply({ content, ephemeral: true });
+  // Replying can itself fail — e.g. Discord 10062 "Unknown interaction" when
+  // the 3s ack window was missed, or a second failure on an already-consumed
+  // token. That must not escape as a second, uncaught error.
+  try {
+    if (interaction.replied || interaction.deferred) {
+      // After deferReply() the ephemeral state is already fixed by the defer;
+      // followUp still honours the flag for the follow-up message itself.
+      await interaction.followUp({ content, flags: MessageFlags.Ephemeral });
+    } else {
+      await interaction.reply({ content, flags: MessageFlags.Ephemeral });
+    }
+  } catch (replyError) {
+    console.error('Failed to deliver command error message to the user:', replyError);
   }
 }

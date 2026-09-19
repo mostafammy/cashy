@@ -24,11 +24,18 @@ export async function findShopItem(db: Db, guildId: string, itemId: string): Pro
   return item;
 }
 
+/**
+ * Insert a shop item and return the created row (including its generated id),
+ * so callers can echo the id back to the admin — `/shop-buy` and `/shop-remove`
+ * both take an `item-id`, which is otherwise never surfaced to anyone.
+ */
 export async function insertShopItem(
   db: Db,
   item: { guildId: string; name: string; price: number; roleId: string; description: string | null },
-): Promise<void> {
-  await db.insert(shopItems).values({ id: randomUUID(), ...item });
+): Promise<ShopItem> {
+  const row = { id: randomUUID(), ...item };
+  await db.insert(shopItems).values(row);
+  return row;
 }
 
 export async function deleteShopItem(db: Db, guildId: string, itemId: string): Promise<void> {

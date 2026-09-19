@@ -17,11 +17,13 @@ describe('/leaderboard command', () => {
       guildId: 'guild-1',
       options: { getSubcommand: () => 'guild' },
       reply: vi.fn(),
+      deferReply: vi.fn(),
+      editReply: vi.fn(),
     } as unknown as ChatInputCommandInteraction;
 
     await command.execute(interaction);
 
-    const [[payload]] = (interaction.reply as ReturnType<typeof vi.fn>).mock.calls;
+    const [[payload]] = (interaction.editReply as ReturnType<typeof vi.fn>).mock.calls;
     expect(payload.content).toContain('a');
     expect(payload.content).toContain('300');
   });
@@ -39,12 +41,40 @@ describe('/leaderboard command', () => {
       guildId: 'guild-1',
       options: { getSubcommand: () => 'global' },
       reply: vi.fn(),
+      deferReply: vi.fn(),
+      editReply: vi.fn(),
     } as unknown as ChatInputCommandInteraction;
 
     await command.execute(interaction);
 
-    const [[payload]] = (interaction.reply as ReturnType<typeof vi.fn>).mock.calls;
+    const [[payload]] = (interaction.editReply as ReturnType<typeof vi.fn>).mock.calls;
     expect(payload.content).toContain('c');
     expect(payload.content).toContain('900');
+  });
+
+  it('rejects the "guild" subcommand in a DM without touching the guild cache', async () => {
+    const db = {} as never;
+    const redis = {} as never;
+    const command = leaderboardCommand(db, redis);
+
+    const getGuildLeaderboard = vi
+      .spyOn(await import('../../src/lib/leaderboard.js'), 'getGuildLeaderboard')
+      .mockResolvedValue([]);
+
+    const interaction = {
+      guildId: null,
+      options: { getSubcommand: () => 'guild' },
+      reply: vi.fn(),
+      deferReply: vi.fn(),
+      editReply: vi.fn(),
+    } as unknown as ChatInputCommandInteraction;
+
+    await command.execute(interaction);
+
+    expect(getGuildLeaderboard).not.toHaveBeenCalled();
+    expect(interaction.deferReply).not.toHaveBeenCalled();
+    expect(interaction.reply).toHaveBeenCalledWith(
+      expect.objectContaining({ content: expect.stringContaining('only works in a server') }),
+    );
   });
 });

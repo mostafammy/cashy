@@ -1,9 +1,8 @@
-import { SlashCommandBuilder } from 'discord.js';
+import { MessageFlags, SlashCommandBuilder } from 'discord.js';
 import type { Db } from '../../db/client.js';
 import type { Redis } from '../../redis/client.js';
 import type { Command } from '../types.js';
 import { transfer } from '../../lib/economy.js';
-import { invalidateLeaderboardCache } from '../../lib/leaderboard.js';
 
 export function payCommand(db: Db, redis: Redis): Command {
   return {
@@ -16,16 +15,20 @@ export function payCommand(db: Db, redis: Redis): Command {
       const target = interaction.options.getUser('user', true);
       const amount = interaction.options.getInteger('amount', true);
 
+      // Option-only validation, no I/O — safe to answer inside the 3s window
+      // and keeps this rejection ephemeral (a deferred public reply could not
+      // be downgraded to ephemeral afterwards).
       if (target.bot) {
-        await interaction.reply({ content: "You can't pay a bot.", ephemeral: true });
+        await interaction.reply({ content: "You can't pay a bot.", flags: MessageFlags.Ephemeral });
         return;
       }
 
-      await transfer(db, interaction.user.id, target.id, amount, interaction.guildId ?? null);
-      await invalidateLeaderboardCache(redis, interaction.guildId ?? undefined);
-      await invalidateLeaderboardCache(redis);
+      await interaction.deferReply();
 
-      await interaction.reply({ content: `Sent ${amount} to <@${target.id}>.` });
+      // transfer() invalidates the guild + global leaderboard caches itself.
+      await transfer(db, redis, interaction.user.id, target.id, amount, interaction.guildId ?? null);
+
+      await interaction.editReply({ content: `Sent ${amount} to <@${target.id}>.` });
     },
   };
 }

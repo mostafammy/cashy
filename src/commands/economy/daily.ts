@@ -13,16 +13,18 @@ export function dailyCommand(db: Db, redis: Redis): Command {
   return {
     data: new SlashCommandBuilder().setName('daily').setDescription('Claim your daily reward'),
     async execute(interaction) {
+      await interaction.deferReply();
+
       const remaining = await getCooldownRemaining(redis, 'daily', interaction.user.id);
       if (remaining > 0) {
         throw new OnCooldownError(remaining);
       }
 
       const config = await getBotConfig(db, redis);
-      await credit(db, interaction.user.id, config.dailyAmount, 'daily', interaction.guildId ?? null);
+      await credit(db, redis, interaction.user.id, config.dailyAmount, 'daily', interaction.guildId ?? null);
       await setCooldown(redis, 'daily', interaction.user.id, DAY_SECONDS);
 
-      await interaction.reply({
+      await interaction.editReply({
         content: `You claimed your daily ${config.dailyAmount} ${config.currencySymbol} ${config.currencyName}!`,
       });
     },

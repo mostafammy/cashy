@@ -19,12 +19,13 @@ describe('/daily command', () => {
     const interaction = {
       user: { id: 'u1' },
       guildId: 'g1',
-      reply: vi.fn(),
+      deferReply: vi.fn(),
+      editReply: vi.fn(),
     } as unknown as ChatInputCommandInteraction;
 
     await command.execute(interaction);
 
-    expect(credit).toHaveBeenCalledWith(db, 'u1', 100, 'daily', 'g1');
+    expect(credit).toHaveBeenCalledWith(db, redis, 'u1', 100, 'daily', 'g1');
     expect(setCooldown).toHaveBeenCalledWith(redis, 'daily', 'u1', 86400);
   });
 
@@ -38,7 +39,8 @@ describe('/daily command', () => {
     const interaction = {
       user: { id: 'u1' },
       guildId: 'g1',
-      reply: vi.fn(),
+      deferReply: vi.fn(),
+      editReply: vi.fn(),
     } as unknown as ChatInputCommandInteraction;
 
     await expect(command.execute(interaction)).rejects.toThrow(OnCooldownError);

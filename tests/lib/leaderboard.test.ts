@@ -4,9 +4,10 @@ import { createRedis } from '../../src/redis/client.js';
 import { users, guildMembers } from '../../src/db/schema.js';
 import { getGuildLeaderboard, getGlobalLeaderboard, invalidateLeaderboardCache } from '../../src/lib/leaderboard.js';
 import { inArray } from 'drizzle-orm';
+import { requireEnv } from '../helpers/env.js';
 
-const db = createDb(process.env.DATABASE_URL ?? 'postgres://cashy:cashy@localhost:5432/cashy');
-const redis = createRedis(process.env.REDIS_URL ?? 'redis://localhost:6379');
+const db = createDb(requireEnv('DATABASE_URL'));
+const redis = createRedis(requireEnv('REDIS_URL'));
 
 describe('leaderboard lib', () => {
   beforeEach(async () => {

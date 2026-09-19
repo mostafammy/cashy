@@ -12,7 +12,14 @@ describe('/shop-add and /shop-remove commands', () => {
     const db = {} as never;
     const command = shopAddCommand(db);
 
-    const insertValues = vi.fn().mockResolvedValue(undefined);
+    const insertValues = vi.fn().mockResolvedValue({
+      id: 'item-1',
+      guildId: 'g1',
+      name: 'VIP Role',
+      price: 500,
+      roleId: 'role-1',
+      description: 'desc',
+    });
     vi.spyOn(await import('../../src/lib/shop.js'), 'insertShopItem').mockImplementation(insertValues);
 
     const interaction = {
@@ -23,6 +30,8 @@ describe('/shop-add and /shop-remove commands', () => {
         getRole: () => ({ id: 'role-1' }),
       },
       reply: vi.fn(),
+      deferReply: vi.fn(),
+      editReply: vi.fn(),
     } as unknown as ChatInputCommandInteraction;
 
     await command.execute(interaction);
@@ -30,6 +39,9 @@ describe('/shop-add and /shop-remove commands', () => {
     expect(insertValues).toHaveBeenCalledWith(
       db,
       expect.objectContaining({ guildId: 'g1', name: 'VIP Role', price: 500, roleId: 'role-1' }),
+    );
+    expect(interaction.editReply).toHaveBeenCalledWith(
+      expect.objectContaining({ content: expect.stringContaining('item-1') }),
     );
   });
 
@@ -44,6 +56,8 @@ describe('/shop-add and /shop-remove commands', () => {
       guildId: 'g1',
       options: { getString: () => 'item-1' },
       reply: vi.fn(),
+      deferReply: vi.fn(),
+      editReply: vi.fn(),
     } as unknown as ChatInputCommandInteraction;
 
     await command.execute(interaction);

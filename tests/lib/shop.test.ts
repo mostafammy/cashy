@@ -4,8 +4,9 @@ import { createDb } from '../../src/db/client.js';
 import { shopItems } from '../../src/db/schema.js';
 import { listShopItems, findShopItem, insertShopItem, deleteShopItem } from '../../src/lib/shop.js';
 import { eq } from 'drizzle-orm';
+import { requireEnv } from '../helpers/env.js';
 
-const db = createDb(process.env.DATABASE_URL ?? 'postgres://cashy:cashy@localhost:5432/cashy');
+const db = createDb(requireEnv('DATABASE_URL'));
 
 const guildId = 'shop-test-guild';
 let itemId: string;

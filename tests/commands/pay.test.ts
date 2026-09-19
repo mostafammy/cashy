@@ -20,12 +20,14 @@ describe('/pay command', () => {
         getInteger: () => 50,
       },
       reply: vi.fn(),
+      deferReply: vi.fn(),
+      editReply: vi.fn(),
     } as unknown as ChatInputCommandInteraction;
 
     await command.execute(interaction);
 
-    expect(transfer).toHaveBeenCalledWith(db, 'sender', 'recipient', 50, 'g1');
-    expect(interaction.reply).toHaveBeenCalledWith(expect.objectContaining({ content: expect.stringContaining('50') }));
+    expect(transfer).toHaveBeenCalledWith(db, redis, 'sender', 'recipient', 50, 'g1');
+    expect(interaction.editReply).toHaveBeenCalledWith(expect.objectContaining({ content: expect.stringContaining('50') }));
   });
 
   it('rejects paying a bot user without calling transfer', async () => {
@@ -68,6 +70,8 @@ describe('/pay command', () => {
         getInteger: () => 50,
       },
       reply: vi.fn(),
+      deferReply: vi.fn(),
+      editReply: vi.fn(),
     } as unknown as ChatInputCommandInteraction;
 
     await expect(command.execute(interaction)).rejects.toThrow(InsufficientBalanceError);

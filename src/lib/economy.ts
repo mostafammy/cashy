@@ -1,7 +1,9 @@
 import { eq, sql } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 import type { Db } from '../db/client.js';
+import type { Redis } from '../redis/client.js';
 import { users, transactions } from '../db/schema.js';
+import { invalidateLeaderboardCache } from './leaderboard.js';
 import { InsufficientBalanceError } from '../errors.js';
 
 export type TransactionType = 'daily' | 'work' | 'pay' | 'shop_purchase' | 'owner_adjust';
@@ -23,6 +25,7 @@ export async function getBalance(db: Db, userId: string): Promise<number> {
 
 export async function credit(
   db: Db,
+  redis: Redis,
   userId: string,
   amount: number,
   type: TransactionType,
@@ -43,10 +46,12 @@ export async function credit(
       guildId,
     });
   });
+  await invalidateLeaderboardCache(redis, guildId);
 }
 
 export async function debit(
   db: Db,
+  redis: Redis,
   userId: string,
   amount: number,
   type: TransactionType,
@@ -77,10 +82,12 @@ export async function debit(
       guildId,
     });
   });
+  await invalidateLeaderboardCache(redis, guildId);
 }
 
 export async function transfer(
   db: Db,
+  redis: Redis,
   fromUserId: string,
   toUserId: string,
   amount: number,
@@ -122,4 +129,5 @@ export async function transfer(
       { id: randomUUID(), userId: toUserId, counterpartyUserId: fromUserId, amount, type: 'pay', guildId },
     ]);
   });
+  await invalidateLeaderboardCache(redis, guildId);
 }
