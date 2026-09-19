@@ -10,6 +10,12 @@ async function ensureUser(tx: Db, userId: string) {
   await tx.insert(users).values({ userId, balance: 0 }).onConflictDoNothing();
 }
 
+function assertValidAmount(amount: number): void {
+  if (!Number.isInteger(amount) || amount <= 0) {
+    throw new Error(`Amount must be a positive integer, got: ${amount}`);
+  }
+}
+
 export async function getBalance(db: Db, userId: string): Promise<number> {
   const [row] = await db.select().from(users).where(eq(users.userId, userId));
   return row?.balance ?? 0;
@@ -22,6 +28,7 @@ export async function credit(
   type: TransactionType,
   guildId: string | null,
 ): Promise<void> {
+  assertValidAmount(amount);
   await db.transaction(async (tx) => {
     await ensureUser(tx as unknown as Db, userId);
     await tx
@@ -45,6 +52,7 @@ export async function debit(
   type: TransactionType,
   guildId: string | null,
 ): Promise<void> {
+  assertValidAmount(amount);
   await db.transaction(async (tx) => {
     await ensureUser(tx as unknown as Db, userId);
     const [row] = await tx
@@ -78,15 +86,23 @@ export async function transfer(
   amount: number,
   guildId: string | null,
 ): Promise<void> {
+  assertValidAmount(amount);
   await db.transaction(async (tx) => {
     await ensureUser(tx as unknown as Db, fromUserId);
     await ensureUser(tx as unknown as Db, toUserId);
 
-    const [sender] = await tx
-      .select()
-      .from(users)
-      .where(eq(users.userId, fromUserId))
-      .for('update');
+    // Lock both rows in a consistent global order (sorted by userId) regardless
+    // of sender/recipient role, so two concurrent transfers going opposite
+    // directions (A->B and B->A) always acquire locks in the same order and
+    // one simply waits for the other instead of deadlocking.
+    const [firstId, secondId] = [fromUserId, toUserId].sort();
+    const [firstRow] = await tx.select().from(users).where(eq(users.userId, firstId)).for('update');
+    const secondRow =
+      secondId === firstId
+        ? firstRow
+        : (await tx.select().from(users).where(eq(users.userId, secondId)).for('update'))[0];
+
+    const sender = firstId === fromUserId ? firstRow : secondRow;
 
     if (!sender || sender.balance < amount) {
       throw new InsufficientBalanceError(fromUserId, amount, sender?.balance ?? 0);

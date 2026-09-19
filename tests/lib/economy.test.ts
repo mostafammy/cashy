@@ -48,4 +48,42 @@ describe('economy lib', () => {
     expect(await getBalance(db, 'econ-a')).toBe(100);
     expect(await getBalance(db, 'econ-b')).toBe(0);
   });
+
+  it('credit rejects a zero, negative, or non-integer amount and leaves balance unchanged', async () => {
+    await expect(credit(db, 'econ-a', -5, 'daily', null)).rejects.toThrow(/positive integer/);
+    await expect(credit(db, 'econ-a', 0, 'daily', null)).rejects.toThrow(/positive integer/);
+    await expect(credit(db, 'econ-a', 1.5, 'daily', null)).rejects.toThrow(/positive integer/);
+    expect(await getBalance(db, 'econ-a')).toBe(100);
+  });
+
+  it('debit rejects a zero, negative, or non-integer amount and leaves balance unchanged', async () => {
+    await expect(debit(db, 'econ-a', -5, 'shop_purchase', null)).rejects.toThrow(/positive integer/);
+    await expect(debit(db, 'econ-a', 0, 'shop_purchase', null)).rejects.toThrow(/positive integer/);
+    await expect(debit(db, 'econ-a', 1.5, 'shop_purchase', null)).rejects.toThrow(/positive integer/);
+    expect(await getBalance(db, 'econ-a')).toBe(100);
+  });
+
+  it('transfer rejects a zero, negative, or non-integer amount and leaves balances unchanged', async () => {
+    await expect(transfer(db, 'econ-a', 'econ-b', -5, null)).rejects.toThrow(/positive integer/);
+    await expect(transfer(db, 'econ-a', 'econ-b', 0, null)).rejects.toThrow(/positive integer/);
+    await expect(transfer(db, 'econ-a', 'econ-b', 1.5, null)).rejects.toThrow(/positive integer/);
+    expect(await getBalance(db, 'econ-a')).toBe(100);
+    expect(await getBalance(db, 'econ-b')).toBe(0);
+  });
+
+  it('concurrent opposite-direction transfers (A->B and B->A) both complete with correct final balances', async () => {
+    // econ-a starts at 100, econ-b at 0. Fire a 30 transfer A->B and a 10
+    // transfer B->A concurrently. Regardless of ordering, neither should
+    // deadlock or error, and the net effect should be deterministic:
+    // econ-a: 100 - 30 + 10 = 80, econ-b: 0 + 30 - 10 = 20.
+    // B->A can only succeed once B has received funds from A, so drizzle/pg's
+    // row locking must serialize these two transactions rather than deadlock.
+    await credit(db, 'econ-b', 10, 'owner_adjust', null); // give econ-b enough to send back
+    await Promise.all([
+      transfer(db, 'econ-a', 'econ-b', 30, null),
+      transfer(db, 'econ-b', 'econ-a', 10, null),
+    ]);
+    expect(await getBalance(db, 'econ-a')).toBe(80);
+    expect(await getBalance(db, 'econ-b')).toBe(30);
+  });
 });
