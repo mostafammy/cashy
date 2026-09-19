@@ -12,10 +12,13 @@ describe('leaderboard lib', () => {
   beforeEach(async () => {
     await db.delete(guildMembers).where(inArray(guildMembers.userId, ['lb-a', 'lb-b', 'lb-c']));
     await db.delete(users).where(inArray(users.userId, ['lb-a', 'lb-b', 'lb-c']));
+    // Balances are deliberately huge and far apart so this test's fixture rows
+    // reliably dominate the top of getGlobalLeaderboard even though the shared
+    // remote Neon DB accumulates leftover rows from other test files' fixtures.
     await db.insert(users).values([
-      { userId: 'lb-a', balance: 300 },
-      { userId: 'lb-b', balance: 100 },
-      { userId: 'lb-c', balance: 200 },
+      { userId: 'lb-a', balance: 900_000_300 },
+      { userId: 'lb-b', balance: 900_000_100 },
+      { userId: 'lb-c', balance: 900_000_200 },
     ]);
     await db.insert(guildMembers).values([
       { guildId: 'guild-x', userId: 'lb-a', inGuild: true },
