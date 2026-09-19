@@ -4,8 +4,11 @@ Cashy is a public, multi-server Discord bot providing a single **universal curre
 
 ## Status
 
-Design complete, implementation not yet started. See the design spec:
-[`docs/superpowers/specs/2026-09-19-cashy-universal-currency-design.md`](docs/superpowers/specs/2026-09-19-cashy-universal-currency-design.md).
+v1 implemented: universal balance, `/balance`, `/daily`, `/work`, `/pay`, `/leaderboard`
+(guild + global), per-guild `/shop-view`/`/shop-buy`, guild-admin
+`/shop-add`/`/shop-remove`, and bot-owner-only `/owner` commands (with
+`mint`/`adjust-balance`/`set-config` subcommands, gated by `OWNER_IDS`).
+See the design spec and implementation plan under `docs/superpowers/`.
 
 ## Stack
 
@@ -16,4 +19,13 @@ Design complete, implementation not yet started. See the design spec:
 
 ## Development
 
-Implementation plan and setup instructions land once the implementation phase begins.
+1. Copy `.env.example` to `.env` and fill in `DISCORD_TOKEN`,
+   `DISCORD_CLIENT_ID`, `OWNER_IDS` (your Discord user ID), `DATABASE_URL`
+   (a Neon Postgres connection string), and `REDIS_URL` (an Upstash Redis TCP
+   connection string, NOT the REST API URL).
+2. `pnpm install`
+3. `pnpm exec drizzle-kit generate && pnpm run db:migrate`
+4. `pnpm run deploy-commands` — registers slash commands with Discord.
+5. `pnpm run dev` — starts the bot.
+
+Run tests with `pnpm test`.
