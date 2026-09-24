@@ -15,5 +15,13 @@ const manager = new ShardingManager(entryPath, {
   execArgv: process.execArgv,
 });
 
-manager.on('shardCreate', (shard) => console.log(`Launched shard ${shard.id}`));
-await manager.spawn();
+manager.on('shardCreate', (shard) => {
+  console.log(`Launched shard ${shard.id}`);
+  shard.on('error', (error) => console.error(`Shard ${shard.id} error:`, error));
+  shard.on('disconnect', () => console.warn(`Shard ${shard.id} disconnected`));
+  shard.on('death', (proc) =>
+    console.error(`Shard ${shard.id} died${'exitCode' in proc ? ` with exit code ${proc.exitCode}` : ''}`),
+  );
+});
+
+await manager.spawn({ timeout: 120_000 });

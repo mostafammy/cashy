@@ -9,9 +9,25 @@ import { createBot } from './bot.js';
 // terminate the process. Deliberately does not exit.
 process.on('unhandledRejection', (err) => console.error('Unhandled rejection:', err));
 
-const env = loadEnv(process.env);
+let env;
+try {
+  env = loadEnv(process.env);
+  console.log('[Shard Entry] Environment variables loaded successfully.');
+} catch (err) {
+  console.error('[Shard Entry] FATAL: Environment variable validation failed:', err);
+  process.exit(1);
+}
+
+console.log('[Shard Entry] Connecting to Database and Redis...');
 const db = createDb(env.databaseUrl);
 const redis = createRedis(env.redisUrl);
 const client = createBot(db, redis, env.ownerIds);
 
-await client.login(env.discordToken);
+console.log('[Shard Entry] Connecting to Discord Gateway...');
+try {
+  await client.login(env.discordToken);
+  console.log('[Shard Entry] client.login() dispatched successfully.');
+} catch (err) {
+  console.error('[Shard Entry] FATAL: client.login() failed:', err);
+  process.exit(1);
+}
