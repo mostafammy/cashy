@@ -7,6 +7,7 @@
   "packageManager": "pnpm@11.5.1",
   "scripts": {
     "build": "tsc -p tsconfig.json",
+    "postinstall": "npm run build",
     "start": "node dist/shard.js",
     "dev": "tsx src/shard.ts",
     "test": "vitest run",
