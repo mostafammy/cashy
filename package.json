@@ -18,6 +18,7 @@
   },
   "dependencies": {
     "discord.js": "^14.16.3",
+    "lodash.snakecase": "^4.1.1",
     "drizzle-orm": "^0.33.0",
     "postgres": "^3.4.4",
     "ioredis": "^5.4.1",
