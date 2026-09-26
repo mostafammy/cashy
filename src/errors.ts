@@ -1,4 +1,5 @@
-import { MessageFlags, type ChatInputCommandInteraction } from 'discord.js';
+import { MessageFlags } from 'discord.js';
+import type { CommandInvocation } from './commands/types.js';
 
 export class InsufficientBalanceError extends Error {
   constructor(userId: string, requested: number, available: number) {
@@ -14,7 +15,7 @@ export class OnCooldownError extends Error {
   }
 }
 
-export async function handleCommandError(interaction: ChatInputCommandInteraction, error: unknown): Promise<void> {
+export async function handleCommandError(interaction: CommandInvocation, error: unknown): Promise<void> {
   let content = 'Something went wrong running that command.';
 
   if (error instanceof InsufficientBalanceError) {
