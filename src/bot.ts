@@ -55,7 +55,14 @@ export async function syncGuildMembership(db: Db, guild: Guild): Promise<void> {
 
 export function createBot(db: Db, redis: Redis, ownerIds: string[]) {
   const client = new Client({
-    intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers],
+    // GuildMessages + MessageContent are needed for bare-word text triggers
+    // (e.g. typing "b" as shorthand for /balance) — see messageCreate below.
+    intents: [
+      GatewayIntentBits.Guilds,
+      GatewayIntentBits.GuildMembers,
+      GatewayIntentBits.GuildMessages,
+      GatewayIntentBits.MessageContent,
+    ],
   });
 
   const registry = createRegistry();
@@ -92,6 +99,14 @@ export function createBot(db: Db, redis: Redis, ownerIds: string[]) {
     safeHandler('interactionCreate', async (interaction) => {
       if (!interaction.isChatInputCommand()) return;
       await registry.handleInteraction(interaction);
+    }),
+  );
+
+  client.on(
+    Events.MessageCreate,
+    safeHandler('messageCreate', async (message) => {
+      if (message.author.bot) return;
+      await registry.handleTextTrigger(message);
     }),
   );
 
