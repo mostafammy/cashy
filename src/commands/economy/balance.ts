@@ -1,7 +1,7 @@
 import { MessageFlags, SlashCommandBuilder } from 'discord.js';
 import type { Db } from '../../db/client.js';
 import type { Redis } from '../../redis/client.js';
-import type { Command } from '../types.js';
+import type { Command, CommandInvocation } from '../types.js';
 import { getBalance } from '../../lib/economy.js';
 import { getBotConfig } from '../../lib/config.js';
 
@@ -16,7 +16,8 @@ export function balanceCommand(db: Db, redis: Redis): Command {
           .setDescription('The user whose balance you want to check')
           .setRequired(false),
       ),
-    async execute(interaction) {
+    aliases: ['b'],
+    async execute(interaction: CommandInvocation) {
       const targetUser = interaction.options.getUser('user') ?? interaction.user;
 
       if (targetUser.bot) {
